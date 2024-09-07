@@ -1,0 +1,1 @@
+mvn org.apache.maven.plugins:maven-compiler-plugin:testCompile@jmh && mvn exec:java@jmh
