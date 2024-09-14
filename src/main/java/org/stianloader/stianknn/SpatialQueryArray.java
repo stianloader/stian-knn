@@ -5,6 +5,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Code heavily based on {@link "https://gist.github.com/Ret-Mode/98cfe91a655e8f496902071a372e4f6c"}
+ *
+ * @param <E>
+ */
 public class SpatialQueryArray<E> {
     // constants - probably better parametrize this
     private static final int CELL_SIZE = 4;
@@ -25,30 +30,23 @@ public class SpatialQueryArray<E> {
         for (int i = 0; i < CELLSSQR; ++i) {
             this.points[i] = new ArrayList<PointObjectPair<E>>();
         }
+
         for (PointObjectPair<E> pop : points) {
 
             int cellX = (int)(Math.max(0.f, Math.min((pop.x - CELL_MIN_COORD) / CELL_SIZE, CELLS-1)));
             int cellY = (int)(Math.max(0.f, Math.min((pop.y - CELL_MIN_COORD) / CELL_SIZE, CELLS-1)));
-
-            if (cellX < 0.f || cellX > CELLS-1) {
-                System.out.println("X error");
-            }
-
-            if (cellY < 0.f || cellY > CELLS-1) {
-                System.out.println("Y error");
-            }
 
             this.points[cellY*CELLS+cellX].add(pop);
         }
 
     }
 
-    private class Results<T> {
+    private static class Results<T> {
         public T object;
         public float distance2;
     }
 
-    private class ResultContainer<T> {
+    private static class ResultContainer<T> {
         public List<Results<T>> result;
         public int found;
         public float maxDist2;
@@ -112,7 +110,6 @@ public class SpatialQueryArray<E> {
     }
 
     public void queryKnn(float x, float y, int nearestNeighbours, Consumer<E> out) {
-
         int cellX = (int)(Math.max(0.f, Math.min((x - CELL_MIN_COORD) / CELL_SIZE, CELLS-1)));
         int cellY = (int)(Math.max(0.f, Math.min((y - CELL_MIN_COORD) / CELL_SIZE, CELLS-1)));
 
@@ -148,42 +145,39 @@ public class SpatialQueryArray<E> {
             int cellYLow = cellY;
             int cellYUp = cellY;
 
-            float euclideanDist = 1;
             while (true) {
 
                 int startX = cellXLow;
+                boolean shrinkX = false;
                 if (cellXLow > 0) {
                     startX--;
+                    shrinkX = true;
                 }
 
                 int endX = cellXUp;
+                boolean growX = false;
                 if (cellXUp < CELLS-1) {
-                    cellXUp++;
+                    endX++;
+                    growX = true;
                 }
 
+                int startY = cellYLow;
+                boolean shrinkY = false;
                 if (cellYLow > 0) {
-
-                    for (int cx = startX; cx <= endX; ++cx){
-                        values = points[(cellYLow-1)*CELLS+cx];
-                        for (int i = 0; i < values.size(); ++i) {
-                            PointObjectPair<E> pop = values.get(i);
-                            float x2 = x - pop.x;
-                            float y2 = y - pop.y;
-                            float dst2 = x2*x2 + y2*y2;
-                
-                            if (rc.found < nearestNeighbours) {
-                                rc.addValueNotFull(dst2, pop.object);
-                            } else if (dst2 < rc.maxDist2) {
-                                rc.addValueFull(dst2, pop.object);
-                            }
-                        }
-                    }
+                    startY--;
+                    shrinkY = true;
                 }
 
+                int endY = cellYUp;
+                boolean growY = false;
                 if (cellYUp < CELLS-1) {
+                    endY++;
+                    growY = true;
+                }
 
+                if (shrinkY) {
                     for (int cx = startX; cx <= endX; ++cx){
-                        values = points[(cellYUp+1)*CELLS+cx];
+                        values = points[startY*CELLS+cx];
                         for (int i = 0; i < values.size(); ++i) {
                             PointObjectPair<E> pop = values.get(i);
                             float x2 = x - pop.x;
@@ -199,9 +193,27 @@ public class SpatialQueryArray<E> {
                     }
                 }
 
-                if (cellXLow > 0) {
+                if (growY) {
+                    for (int cx = startX; cx <= endX; ++cx){
+                        values = points[endY*CELLS+cx];
+                        for (int i = 0; i < values.size(); ++i) {
+                            PointObjectPair<E> pop = values.get(i);
+                            float x2 = x - pop.x;
+                            float y2 = y - pop.y;
+                            float dst2 = x2*x2 + y2*y2;
+                
+                            if (rc.found < nearestNeighbours) {
+                                rc.addValueNotFull(dst2, pop.object);
+                            } else if (dst2 < rc.maxDist2) {
+                                rc.addValueFull(dst2, pop.object);
+                            }
+                        }
+                    }
+                }
+
+                if (shrinkX) {
                     for (int cY = cellYLow; cY <= cellYUp; ++cY){
-                        values = points[cY*CELLS+cellXLow-1];
+                        values = points[cY*CELLS+startX];
                         for (int i = 0; i < values.size(); ++i) {
                             PointObjectPair<E> pop = values.get(i);
                             float x2 = x - pop.x;
@@ -217,9 +229,9 @@ public class SpatialQueryArray<E> {
                     }
                 }
 
-                if (cellXUp < CELLS-1) {
+                if (growX) {
                     for (int cY = cellYLow; cY <= cellYUp; ++cY){
-                        values = points[cY*CELLS+cellXUp+1];
+                        values = points[cY*CELLS+endX];
                         for (int i = 0; i < values.size(); ++i) {
                             PointObjectPair<E> pop = values.get(i);
                             float x2 = x - pop.x;
@@ -235,19 +247,20 @@ public class SpatialQueryArray<E> {
                     }
                 }
 
-                float distSqr = euclideanDist*euclideanDist*CELL_SIZE*CELL_SIZE;
+                minDstSmp += CELL_SIZE;
+                float distSqr = minDstSmp * minDstSmp;
                 if (rc.found == nearestNeighbours && rc.maxDist2 < distSqr) {
                     break;
                 }
-                cellYLow--;
-                cellYUp++;
-                cellXLow--;
-                cellXUp++;
+                cellYLow = Math.max(0, cellYLow-1);
+                cellYUp = Math.min(CELLS-1, cellYUp+1);
+                cellXLow = Math.max(0, cellXLow-1);
+                cellXUp = Math.min(CELLS-1, cellXUp+1);
             }
         } 
 
-        for (Results<E> r : rc.result) {
-            out.accept(r.object);
+        for (int i = 0; i < rc.found; ++i) {
+            out.accept(rc.result.get(i).object);
         }
     }
 }

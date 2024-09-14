@@ -1,0 +1,37 @@
+Benchmark                                Mode  Cnt   Score   Error  Units
+Benchmarks.benchmarkSQAG1nn50          sample   73   4.083 ± 0.268   s/op
+Benchmarks.benchmarkSQAG1nn50:p0.00    sample        3.657           s/op
+Benchmarks.benchmarkSQAG1nn50:p0.50    sample        3.855           s/op
+Benchmarks.benchmarkSQAG1nn50:p0.90    sample        4.832           s/op
+Benchmarks.benchmarkSQAG1nn50:p0.95    sample        5.783           s/op
+Benchmarks.benchmarkSQAG1nn50:p0.99    sample        7.432           s/op
+Benchmarks.benchmarkSQAG1nn50:p0.999   sample        7.432           s/op
+Benchmarks.benchmarkSQAG1nn50:p0.9999  sample        7.432           s/op
+Benchmarks.benchmarkSQAG1nn50:p1.00    sample        7.432           s/op
+Benchmarks.benchmarkSQAG40nn           sample  152   1.813 ± 0.069   s/op
+Benchmarks.benchmarkSQAG40nn:p0.00     sample        1.575           s/op
+Benchmarks.benchmarkSQAG40nn:p0.50     sample        1.712           s/op
+Benchmarks.benchmarkSQAG40nn:p0.90     sample        2.156           s/op
+Benchmarks.benchmarkSQAG40nn:p0.95     sample        2.361           s/op
+Benchmarks.benchmarkSQAG40nn:p0.99     sample        2.901           s/op
+Benchmarks.benchmarkSQAG40nn:p0.999    sample        3.041           s/op
+Benchmarks.benchmarkSQAG40nn:p0.9999   sample        3.041           s/op
+Benchmarks.benchmarkSQAG40nn:p1.00     sample        3.041           s/op
+Benchmarks.benchmarkSQAL1nn50          sample   75   3.683 ± 0.053   s/op
+Benchmarks.benchmarkSQAL1nn50:p0.00    sample        3.427           s/op
+Benchmarks.benchmarkSQAL1nn50:p0.50    sample        3.687           s/op
+Benchmarks.benchmarkSQAL1nn50:p0.90    sample        3.839           s/op
+Benchmarks.benchmarkSQAL1nn50:p0.95    sample        3.896           s/op
+Benchmarks.benchmarkSQAL1nn50:p0.99    sample        4.173           s/op
+Benchmarks.benchmarkSQAL1nn50:p0.999   sample        4.173           s/op
+Benchmarks.benchmarkSQAL1nn50:p0.9999  sample        4.173           s/op
+Benchmarks.benchmarkSQAL1nn50:p1.00    sample        4.173           s/op
+Benchmarks.benchmarkSQAL40nn           sample   48   7.622 ± 0.907   s/op
+Benchmarks.benchmarkSQAL40nn:p0.00     sample        6.912           s/op
+Benchmarks.benchmarkSQAL40nn:p0.50     sample        7.147           s/op
+Benchmarks.benchmarkSQAL40nn:p0.90     sample        7.569           s/op
+Benchmarks.benchmarkSQAL40nn:p0.95     sample       13.014           s/op
+Benchmarks.benchmarkSQAL40nn:p0.99     sample       16.626           s/op
+Benchmarks.benchmarkSQAL40nn:p0.999    sample       16.626           s/op
+Benchmarks.benchmarkSQAL40nn:p0.9999   sample       16.626           s/op
+Benchmarks.benchmarkSQAL40nn:p1.00     sample       16.626           s/op
