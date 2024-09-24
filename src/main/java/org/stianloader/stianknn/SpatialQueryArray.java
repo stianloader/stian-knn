@@ -14,31 +14,62 @@ import org.jetbrains.annotations.Nullable;
  * @param <E>
  */
 public class SpatialQueryArray<@NotNull E> {
-    // constants - probably better parametrize this
-    private static final int CELL_SIZE = 4;
-    private static final float CELL_MIN_COORD = -120.f;
-    private static final float CELL_MAX_COORD =  120.f;
-    private static final int CELLS = (int) ((CELL_MAX_COORD - CELL_MIN_COORD) / CELL_SIZE);
-    private static final int CELLSSQR = CELLS * CELLS;
 
-    public final List<PointObjectPair<E>>[] points;
+    private final float cellHeight;
+
+    /**
+     * Amount of cells a strip has (or the width of the grid, in cells).
+     */
+    private final int cellStripSize;
+
+    private final float cellWidth;
+    private final float maxX;
+    private final float maxY;
+    private final float minX;
+    private final float minY;
+
+    /**
+     * The grid where all the points within the {@link SpatialQueryArray} are located within.
+     * The grid is laid out with horizontal strips being kept intact, with y values closer to
+     * positive infinity being put more towards to the end of the list, with y values closer to
+     * negative infinity tending towards the front of the list.
+     */
+    private final List<PointObjectPair<E>>[] points;
+
     private final ResultContainer<E> rc;
 
+    /**
+     * Amount of cells in a vertical column within the grid.
+     * Note that only rows (called strips as far as this class is concerned) are stored
+     * continuously in memory, individual columns will be chopped up in memory, but will
+     * be stored with a stride corresponding to the size of the rows, as defined
+     * by {@link SpatialQueryArray#cellStripSize}.
+     */
+    private final int verticalCellCount;
+
     @SuppressWarnings("unchecked")
-    public SpatialQueryArray(Collection<PointObjectPair<E>> points) {
+    public SpatialQueryArray(Collection<PointObjectPair<E>> points, float minX, float minY, float maxX, float maxY, float cellWidth, float cellHeight) {
+        this.maxX = maxX;
+        this.maxY = maxY;
+        this.minX = minX;
+        this.minY = minY;
+        this.cellWidth = cellWidth;
+        this.cellHeight = cellHeight;
+        this.cellStripSize = (int) ((this.maxX - this.minX) / this.cellWidth) + 1;
+        this.verticalCellCount = ((int) ((this.maxY - this.minY) / this.cellHeight) + 1);
 
         this.rc = new ResultContainer<>(40);
-        this.points = new ArrayList[SpatialQueryArray.CELLSSQR];
+        this.points = new List[this.cellStripSize * verticalCellCount];
 
-        for (int i = 0; i < SpatialQueryArray.CELLSSQR; i++) {
+        for (int i = 0; i < this.points.length; i++) {
             this.points[i] = new ArrayList<>();
         }
 
         for (PointObjectPair<E> pair : points) {
-            int cellX = (int)(Math.max(0, Math.min((pair.x - SpatialQueryArray.CELL_MIN_COORD) / SpatialQueryArray.CELL_SIZE, SpatialQueryArray.CELLS - 1)));
-            int cellY = (int)(Math.max(0, Math.min((pair.y - SpatialQueryArray.CELL_MIN_COORD) / SpatialQueryArray.CELL_SIZE, SpatialQueryArray.CELLS - 1)));
+            int cellX = Math.max(0, (int) ((Math.min(pair.x, this.maxX) - this.minX) / this.cellWidth));
+            int cellY = Math.max(0, (int) ((Math.min(pair.y, this.maxY) - this.minY) / this.cellHeight));
 
-            this.points[cellY * SpatialQueryArray.CELLS + cellX].add(pair);
+            this.points[cellY * this.cellStripSize + cellX].add(pair);
         }
     }
 
@@ -56,7 +87,7 @@ public class SpatialQueryArray<@NotNull E> {
         ResultContainer(int neighbours) {
             this.result = new ArrayList<>(neighbours);
             this.found = 0;
-            this.maxDist2 = Float.MAX_VALUE;
+            this.maxDist2 = Float.POSITIVE_INFINITY;
 
             for (int i = 0; i < neighbours; i++) {
                 this.result.add(new Results<>());
@@ -65,7 +96,7 @@ public class SpatialQueryArray<@NotNull E> {
 
         void reset(int nearestNeighbours) {
             this.found = 0;
-            this.maxDist2 = Float.MAX_VALUE;
+            this.maxDist2 = Float.POSITIVE_INFINITY;
 
             while (this.result.size() < nearestNeighbours) {
                 this.result.add(new Results<>());
@@ -114,12 +145,12 @@ public class SpatialQueryArray<@NotNull E> {
     }
 
     public void queryKnn(float x, float y, int nearestNeighbours, Consumer<E> out) {
-        int cellX = (int)(Math.max(0, Math.min((x - SpatialQueryArray.CELL_MIN_COORD) / SpatialQueryArray.CELL_SIZE, SpatialQueryArray.CELLS - 1)));
-        int cellY = (int)(Math.max(0, Math.min((y - SpatialQueryArray.CELL_MIN_COORD) / SpatialQueryArray.CELL_SIZE, SpatialQueryArray.CELLS - 1)));
+        final int cellX = Math.max(0, (int) ((Math.min(x, this.maxX) - this.minX) / this.cellWidth));
+        final int cellY = Math.max(0, (int) ((Math.min(y, this.maxY) - this.minY) / this.cellHeight));
 
         this.rc.reset(nearestNeighbours);
 
-        List<PointObjectPair<E>> values = this.points[cellY * SpatialQueryArray.CELLS + cellX];
+        List<PointObjectPair<E>> values = this.points[cellY * this.cellStripSize + cellX];
         for (int i = 0; i < values.size(); ++i) {
             PointObjectPair<E> pop = values.get(i);
             float x2 = x - pop.x;
@@ -133,16 +164,16 @@ public class SpatialQueryArray<@NotNull E> {
             }
         }
 
-        float dist1XSmp = cellX * SpatialQueryArray.CELL_SIZE + SpatialQueryArray.CELL_MIN_COORD;
-        float dist2XSmp = dist1XSmp + SpatialQueryArray.CELL_SIZE;
-        float dist1YSmp = cellY * SpatialQueryArray.CELL_SIZE + SpatialQueryArray.CELL_MIN_COORD;
-        float dist2YSmp = dist1YSmp + SpatialQueryArray.CELL_SIZE;
+        float cellMinX = cellX * this.cellWidth + this.minX;
+        float cellMaxX = cellMinX + this.cellWidth;
+        float cellMinY = cellY * this.cellHeight + this.minY;
+        float cellMaxY = cellMinY + this.cellHeight;
 
-        float minDistXSmp = Math.min(Math.abs(x - dist1XSmp), Math.abs(x - dist2XSmp));
-        float minDistYSmp = Math.min(Math.abs(x - dist1YSmp), Math.abs(x - dist2YSmp));
-        float minDstSmp = Math.min(minDistXSmp, minDistYSmp);
+        float nearestCellBorderX = Math.min(Math.abs(x - cellMinX), Math.abs(x - cellMaxX));
+        float nearestCellBorderY = Math.min(Math.abs(x - cellMinY), Math.abs(x - cellMaxY));
+        float nearestCellBorderDist = Math.min(nearestCellBorderX, nearestCellBorderY);
 
-        if (this.rc.found != nearestNeighbours || this.rc.maxDist2 > minDstSmp * minDstSmp) {
+        if (this.rc.found != nearestNeighbours || this.rc.maxDist2 > nearestCellBorderDist * nearestCellBorderDist) {
 
             int cellXLow = cellX;
             int cellXUp = cellX;
@@ -160,7 +191,7 @@ public class SpatialQueryArray<@NotNull E> {
 
                 int endX = cellXUp;
                 boolean growX = false;
-                if (cellXUp < SpatialQueryArray.CELLS - 1) {
+                if (cellXUp < this.cellStripSize - 1) {
                     endX++;
                     growX = true;
                 }
@@ -174,14 +205,14 @@ public class SpatialQueryArray<@NotNull E> {
 
                 int endY = cellYUp;
                 boolean growY = false;
-                if (cellYUp < SpatialQueryArray.CELLS - 1) {
+                if (cellYUp < this.verticalCellCount - 1) {
                     endY++;
                     growY = true;
                 }
 
                 if (shrinkY) {
                     for (int cx = startX; cx <= endX; cx++) {
-                        values = this.points[startY * SpatialQueryArray.CELLS + cx];
+                        values = this.points[startY * this.cellStripSize + cx];
                         for (int i = 0; i < values.size(); i++) {
                             PointObjectPair<E> pop = values.get(i);
                             float x2 = x - pop.x;
@@ -199,7 +230,7 @@ public class SpatialQueryArray<@NotNull E> {
 
                 if (growY) {
                     for (int cx = startX; cx <= endX; cx++) {
-                        values = this.points[endY * SpatialQueryArray.CELLS + cx];
+                        values = this.points[endY * this.cellStripSize + cx];
                         for (int i = 0; i < values.size(); i++) {
                             PointObjectPair<E> pop = values.get(i);
                             float x2 = x - pop.x;
@@ -217,7 +248,7 @@ public class SpatialQueryArray<@NotNull E> {
 
                 if (shrinkX) {
                     for (int cY = cellYLow; cY <= cellYUp; cY++){
-                        values = points[cY * SpatialQueryArray.CELLS + startX];
+                        values = this.points[cY * this.cellStripSize + startX];
                         for (int i = 0; i < values.size(); i++) {
                             PointObjectPair<E> pop = values.get(i);
                             float x2 = x - pop.x;
@@ -235,7 +266,7 @@ public class SpatialQueryArray<@NotNull E> {
 
                 if (growX) {
                     for (int cY = cellYLow; cY <= cellYUp; cY++) {
-                        values = this.points[cY * SpatialQueryArray.CELLS + endX];
+                        values = this.points[cY * this.cellStripSize + endX];
                         for (int i = 0; i < values.size(); i++) {
                             PointObjectPair<E> pop = values.get(i);
                             float x2 = x - pop.x;
@@ -251,17 +282,25 @@ public class SpatialQueryArray<@NotNull E> {
                     }
                 }
 
-                minDstSmp += SpatialQueryArray.CELL_SIZE;
-                float distSqr = minDstSmp * minDstSmp;
+                if (growX || shrinkX) {
+                    nearestCellBorderX += this.cellWidth;
+                }
+
+                if (growY || shrinkY) {
+                    nearestCellBorderY += this.cellHeight;
+                }
+
+                nearestCellBorderDist = Math.min(nearestCellBorderX, nearestCellBorderY);
+                float distSqr = nearestCellBorderDist * nearestCellBorderDist;
 
                 if (this.rc.found == nearestNeighbours && this.rc.maxDist2 < distSqr) {
                     break;
                 }
 
                 cellYLow = Math.max(0, cellYLow - 1);
-                cellYUp = Math.min(SpatialQueryArray.CELLS - 1, cellYUp + 1);
+                cellYUp = Math.min(this.verticalCellCount - 1, cellYUp + 1);
                 cellXLow = Math.max(0, cellXLow - 1);
-                cellXUp = Math.min(SpatialQueryArray.CELLS - 1, cellXUp + 1);
+                cellXUp = Math.min(this.cellStripSize - 1, cellXUp + 1);
             }
         } 
 

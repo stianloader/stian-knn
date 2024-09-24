@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.jetbrains.annotations.NotNull;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
@@ -85,15 +86,15 @@ public class Benchmarks {
             throw new UncheckedIOException(e);
         }
         List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
-        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        List<PointObjectPair<Map.@NotNull Entry<Float, Float>>> points = new ArrayList<>(stars.size());
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }
-        SpatialQueryArray<Map.Entry<Float, Float>> query = new SpatialQueryArray<>(points);
-
-        ThreadLocalRandom random = ThreadLocalRandom.current();
         float width = generator.getMapWidth(starCount);
         float height = generator.getMapHeight(starCount);
+        SpatialQueryArray<Map.@NotNull Entry<Float, Float>> query = new SpatialQueryArray<>(points, 0, 0, width, height, 4, 4);
+
+        ThreadLocalRandom random = ThreadLocalRandom.current();
         for (int i = 0; i < starCount; i++) {
             float x = random.nextFloat() * width;
             float y = random.nextFloat() * height;
@@ -113,15 +114,15 @@ public class Benchmarks {
             throw new UncheckedIOException(e);
         }
         List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
-        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        List<PointObjectPair<Map.@NotNull Entry<Float, Float>>> points = new ArrayList<>(stars.size());
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }
-        SpatialQueryArray<Map.Entry<Float, Float>> query = new SpatialQueryArray<>(points);
-
-        ThreadLocalRandom random = ThreadLocalRandom.current();
         float width = generator.getMapWidth(starCount);
         float height = generator.getMapHeight(starCount);
+        SpatialQueryArray<Map.@NotNull Entry<Float, Float>> query = new SpatialQueryArray<>(points, 0, 0, width, height, 4, 4);
+
+        ThreadLocalRandom random = ThreadLocalRandom.current();
         for (int i = 0; i < starCount * 50; i++) {
             float x = random.nextFloat() * width;
             float y = random.nextFloat() * height;
