@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.stianloader</groupId>
     <artifactId>stian-knn</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>StianKNN</name>
     <description>Stian-knn provides datastructures dedicated towards performing
         extremely fast k-nearest-neighbour queries on very large datasets.</description>
