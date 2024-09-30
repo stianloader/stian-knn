@@ -3,6 +3,7 @@ package org.stianloader.stianknn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
@@ -13,19 +14,90 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <E>
  */
-public class SpatialQueryArray<@NotNull E> {
+public class SpatialQueryArray<@NotNull E> implements SpatialIndexKNN<E> {
+
+    private static class ResultContainer<T> {
+        public int found;
+        public float maxDist2;
+        public List<Results<T>> result;
+
+        ResultContainer(int neighbours) {
+            this.result = new ArrayList<>(neighbours);
+            this.found = 0;
+            this.maxDist2 = Float.POSITIVE_INFINITY;
+
+            for (int i = 0; i < neighbours; i++) {
+                this.result.add(new Results<>());
+            }
+        }
+
+        void addValueFull(float dist2, T obj) {
+            Results<T> r = this.result.get(this.found - 1);
+            r.distance2 = dist2;
+            r.object = obj;
+
+            int prevFound = this.found - 2;
+            while (prevFound >= 0) {
+                Results<T> prevObj = this.result.get(prevFound);
+                if (prevObj.distance2 > r.distance2) {
+                    this.result.set(prevFound + 1, prevObj);
+                    this.result.set(prevFound, r);
+                    prevFound--;
+                } else {
+                    break;
+                }
+            }
+
+            this.maxDist2 = this.result.get(this.found - 1).distance2;
+        }
+
+        void addValueNotFull(float dist2, T obj) {
+            Results<T> r = this.result.get(this.found);
+            r.distance2 = dist2;
+            r.object = obj;
+
+            int prevFound = this.found - 1;
+            while (prevFound >= 0) {
+                Results<T> prevObj = this.result.get(prevFound);
+                if (prevObj.distance2 > r.distance2) {
+                    this.result.set(prevFound + 1, prevObj);
+                    this.result.set(prevFound, r);
+                    prevFound--;
+                } else {
+                    break;
+                }
+            }
+
+            this.maxDist2 = this.result.get(this.found++).distance2;
+        }
+
+        void reset(int nearestNeighbours) {
+            this.found = 0;
+            this.maxDist2 = Float.POSITIVE_INFINITY;
+
+            while (this.result.size() < nearestNeighbours) {
+                this.result.add(new Results<>());
+            }
+        }
+    }
+
+    private static class Results<T> {
+        public float distance2;
+        @Nullable
+        public T object;
+    }
 
     private final float cellHeight;
-
     /**
      * Amount of cells a strip has (or the width of the grid, in cells).
      */
     private final int cellStripSize;
-
     private final float cellWidth;
     private final float maxX;
     private final float maxY;
+
     private final float minX;
+
     private final float minY;
 
     /**
@@ -73,78 +145,16 @@ public class SpatialQueryArray<@NotNull E> {
         }
     }
 
-    private static class Results<T> {
-        @Nullable
-        public T object;
-        public float distance2;
+    @Override
+    @Nullable
+    public E query1nn(float x, float y) {
+        AtomicReference<E> ref = new AtomicReference<>();
+        this.queryKnn(x, y, 1, ref::set);
+        return ref.get();
     }
 
-    private static class ResultContainer<T> {
-        public List<Results<T>> result;
-        public int found;
-        public float maxDist2;
-
-        ResultContainer(int neighbours) {
-            this.result = new ArrayList<>(neighbours);
-            this.found = 0;
-            this.maxDist2 = Float.POSITIVE_INFINITY;
-
-            for (int i = 0; i < neighbours; i++) {
-                this.result.add(new Results<>());
-            }
-        }
-
-        void reset(int nearestNeighbours) {
-            this.found = 0;
-            this.maxDist2 = Float.POSITIVE_INFINITY;
-
-            while (this.result.size() < nearestNeighbours) {
-                this.result.add(new Results<>());
-            }
-        }
-
-        void addValueNotFull(float dist2, T obj) {
-            Results<T> r = this.result.get(this.found);
-            r.distance2 = dist2;
-            r.object = obj;
-
-            int prevFound = this.found - 1;
-            while (prevFound >= 0) {
-                Results<T> prevObj = this.result.get(prevFound);
-                if (prevObj.distance2 > r.distance2) {
-                    this.result.set(prevFound + 1, prevObj);
-                    this.result.set(prevFound, r);
-                    prevFound--;
-                } else {
-                    break;
-                }
-            }
-
-            this.maxDist2 = this.result.get(this.found++).distance2;
-        }
-
-        void addValueFull(float dist2, T obj) {
-            Results<T> r = this.result.get(this.found - 1);
-            r.distance2 = dist2;
-            r.object = obj;
-
-            int prevFound = this.found - 2;
-            while (prevFound >= 0) {
-                Results<T> prevObj = this.result.get(prevFound);
-                if (prevObj.distance2 > r.distance2) {
-                    this.result.set(prevFound + 1, prevObj);
-                    this.result.set(prevFound, r);
-                    prevFound--;
-                } else {
-                    break;
-                }
-            }
-
-            this.maxDist2 = this.result.get(this.found - 1).distance2;
-        }
-    }
-
-    public void queryKnn(float x, float y, int nearestNeighbours, Consumer<E> out) {
+    @Override
+    public void queryKnn(float x, float y, int nearestNeighbours, @NotNull Consumer<@NotNull E> out) {
         final int cellX = Math.max(0, (int) ((Math.min(x, this.maxX) - this.minX) / this.cellWidth));
         final int cellY = Math.max(0, (int) ((Math.min(y, this.maxY) - this.minY) / this.cellHeight));
 

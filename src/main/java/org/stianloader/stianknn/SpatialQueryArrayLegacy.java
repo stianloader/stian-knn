@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Deprecated
-public class SpatialQueryArrayLegacy<E> {
+public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E> {
     private final @NotNull PointObjectPair<E>[] points;
 
     public SpatialQueryArrayLegacy(@NotNull Collection<@NotNull PointObjectPair<E>> points) {
@@ -37,6 +37,7 @@ public class SpatialQueryArrayLegacy<E> {
     }
 
     @Nullable
+    @Override
     public E query1nn(float x, float y, float minDistSq, float maxDistSq) {
         PointObjectPair<E> pair = this.query1nn0(x, y, minDistSq, maxDistSq);
         return pair == null ? null : pair.object;
