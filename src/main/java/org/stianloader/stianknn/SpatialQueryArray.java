@@ -298,6 +298,8 @@ public class SpatialQueryArray<@NotNull E> implements SpatialIndexKNN<E> {
 
                 if (growY || shrinkY) {
                     nearestCellBorderY += this.cellHeight;
+                } else if (!(growX || shrinkX)) {
+                    break; // Emergency break
                 }
 
                 nearestCellBorderDist = Math.min(nearestCellBorderX, nearestCellBorderY);
