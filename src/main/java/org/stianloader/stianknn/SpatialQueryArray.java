@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Code heavily based on {@link "https://gist.github.com/Ret-Mode/98cfe91a655e8f496902071a372e4f6c"}
+ * Code heavily based on <a href="https://gist.github.com/Ret-Mode/98cfe91a655e8f496902071a372e4f6c">a gist made by someone else.</a>
  *
  * @param <E>
  */
