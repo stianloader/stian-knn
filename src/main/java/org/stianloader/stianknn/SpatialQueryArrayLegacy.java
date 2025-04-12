@@ -10,9 +10,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Deprecated
-public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E> {
+public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E>, SpatialIndexKNN<E>, SpatialIndexIterable<E> {
     private final @NotNull PointObjectPair<E>[] points;
 
+    @SuppressWarnings("unchecked")
     public SpatialQueryArrayLegacy(@NotNull Collection<@NotNull PointObjectPair<E>> points) {
         this.points = points.toArray(new @NotNull PointObjectPair[0]);
         Arrays.sort(this.points);
@@ -34,6 +35,11 @@ public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E> {
         }
 
         return leftAnchor;
+    }
+
+    @Override
+    public Iterator<E> createIterator(float x, float y) {
+        return this.queryKnn(x, y);
     }
 
     @Nullable
@@ -97,6 +103,7 @@ public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E> {
     }
 
     @NotNull
+    @Deprecated
     public Iterator<@NotNull E> queryKnn(float x, float y) {
         return new Iterator<@NotNull E>() {
             private float minDistance = 0F;
@@ -138,6 +145,7 @@ public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E> {
         };
     }
 
+    @Override
     public void queryKnn(float x, float y, int nearestNeighbours, Consumer<E> out) {
         // FIXME this algorithm is inappropriate if multiple objects have the same distance
         float minDistance = 0F;

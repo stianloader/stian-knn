@@ -19,6 +19,64 @@ public class Benchmarks {
     @Benchmark
     @BenchmarkMode(Mode.SampleTime)
     @Warmup(iterations = 1)
+    public void benchmarkSBQA40nn(Blackhole bh) {
+        final int starCount = 50_000;
+        
+        TestStarGenerator generator;
+        try {
+            generator = new TestStarGenerator();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
+        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        for (Map.Entry<Float, Float> star : stars) {
+            points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
+        }
+        SpatialIndexKNN<Map.Entry<Float, Float>> query = new SpatialBufferedQueryArray<>(points);
+
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        float width = generator.getMapWidth(starCount);
+        float height = generator.getMapHeight(starCount);
+        for (int i = 0; i < starCount; i++) {
+            float x = random.nextFloat() * width;
+            float y = random.nextFloat() * height;
+            query.queryKnn(x, y, 40, bh::consume);
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.SampleTime)
+    @Warmup(iterations = 1)
+    public void benchmarkSBQA1nn50(Blackhole bh) {
+        final int starCount = 50_000;
+        TestStarGenerator generator;
+        try {
+            generator = new TestStarGenerator();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
+        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        for (Map.Entry<Float, Float> star : stars) {
+            points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
+        }
+
+        SpatialRingIndex1NN<Map.Entry<Float, Float>> query = new SpatialBufferedQueryArray<>(points);
+
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        float width = generator.getMapWidth(starCount);
+        float height = generator.getMapHeight(starCount);
+        for (int i = 0; i < starCount * 50; i++) {
+            float x = random.nextFloat() * width;
+            float y = random.nextFloat() * height;
+            bh.consume(query.query1nn(x, y, 0, Float.MAX_VALUE));
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.SampleTime)
+    @Warmup(iterations = 1)
     public void benchmarkSQAL40nn(Blackhole bh) {
         final int starCount = 50_000;
         
@@ -33,7 +91,9 @@ public class Benchmarks {
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }
-        SpatialQueryArrayLegacy<Map.Entry<Float, Float>> query = new SpatialQueryArrayLegacy<>(points);
+
+        @SuppressWarnings("deprecation")
+        SpatialIndexKNN<Map.Entry<Float, Float>> query = new SpatialQueryArrayLegacy<>(points);
 
         ThreadLocalRandom random = ThreadLocalRandom.current();
         float width = generator.getMapWidth(starCount);
@@ -61,7 +121,9 @@ public class Benchmarks {
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }
-        SpatialQueryArrayLegacy<Map.Entry<Float, Float>> query = new SpatialQueryArrayLegacy<>(points);
+
+        @SuppressWarnings("deprecation")
+        SpatialRingIndex1NN<Map.Entry<Float, Float>> query = new SpatialQueryArrayLegacy<>(points);
 
         ThreadLocalRandom random = ThreadLocalRandom.current();
         float width = generator.getMapWidth(starCount);
