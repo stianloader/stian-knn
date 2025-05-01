@@ -2,11 +2,13 @@ package org.stianloader.stianknn;
 
 import java.util.Iterator;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * A 2D spatial index that is capable of looking up an arbitrary amount of elements based
  * on the distance of a point.
  */
-public interface SpatialIndexIterable<E> {
+public interface SpatialIndexIterable<E> extends SpatialIndexKNN<E> {
 
     /**
      * Create an iterator that fetches the element close to the point defined by the parameters <code>x</code>
@@ -20,5 +22,5 @@ public interface SpatialIndexIterable<E> {
      * @param y The y component of the position of the point which will be the origin for the proximity evaluations.
      * @return An iterator that iterates over the elements based on the proximity from the given point.
      */
-    Iterator<E> createIterator(float x, float y);
+    Iterator<@NotNull E> createIterator(float x, float y);
 }

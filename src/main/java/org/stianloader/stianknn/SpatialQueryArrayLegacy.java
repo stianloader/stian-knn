@@ -6,11 +6,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
+import org.jetbrains.annotations.NonBlocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Deprecated
-public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E>, SpatialIndexKNN<E>, SpatialIndexIterable<E> {
+public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E>, SpatialIndexIterable<E> {
     private final @NotNull PointObjectPair<E>[] points;
 
     @SuppressWarnings("unchecked")
@@ -38,7 +39,7 @@ public class SpatialQueryArrayLegacy<E> implements SpatialRingIndex1NN<E>, Spati
     }
 
     @Override
-    public Iterator<E> createIterator(float x, float y) {
+    public Iterator<@NotNull E> createIterator(float x, float y) {
         return this.queryKnn(x, y);
     }
 

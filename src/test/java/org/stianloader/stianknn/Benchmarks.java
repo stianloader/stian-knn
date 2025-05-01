@@ -29,7 +29,7 @@ public class Benchmarks {
             throw new UncheckedIOException(e);
         }
         List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
-        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        List<@NotNull PointObjectPair<Map.@NotNull Entry<Float, Float>>> points = new ArrayList<>(stars.size());
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }
@@ -57,7 +57,7 @@ public class Benchmarks {
             throw new UncheckedIOException(e);
         }
         List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
-        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        List<@NotNull PointObjectPair<Map.@NotNull Entry<Float, Float>>> points = new ArrayList<>(stars.size());
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }
@@ -87,7 +87,7 @@ public class Benchmarks {
             throw new UncheckedIOException(e);
         }
         List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
-        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        List<@NotNull PointObjectPair<Map.@NotNull Entry<Float, Float>>> points = new ArrayList<>(stars.size());
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }
@@ -117,7 +117,7 @@ public class Benchmarks {
             throw new UncheckedIOException(e);
         }
         List<Map.Entry<Float, Float>> stars = generator.generateStars(starCount);
-        List<PointObjectPair<Map.Entry<Float, Float>>> points = new ArrayList<>(stars.size());
+        List<@NotNull PointObjectPair<Map.@NotNull Entry<Float, Float>>> points = new ArrayList<>(stars.size());
         for (Map.Entry<Float, Float> star : stars) {
             points.add(new PointObjectPair<>(star, star.getKey(), star.getValue()));
         }

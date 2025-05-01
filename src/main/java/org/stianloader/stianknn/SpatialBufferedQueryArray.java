@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * @param <E> The type of elements this container may store. Note that the elements have to be
  * wrapped in a {@link PointObjectPair}, see the constructor's signature for more.
  */
-public class SpatialBufferedQueryArray<E> implements SpatialRingIndex1NN<E>, SpatialIndexKNN<E>, SpatialIndexIterable<E> {
+public class SpatialBufferedQueryArray<E> implements SpatialRingIndex1NN<E>, SpatialIndexIterable<E> {
 
     static final class CachedObject<T> implements Comparable<CachedObject<T>> {
         private static final CachedObject<Object> NULL_OBJECT = new CachedObject<>(null, Float.POSITIVE_INFINITY);
@@ -52,13 +52,13 @@ public class SpatialBufferedQueryArray<E> implements SpatialRingIndex1NN<E>, Spa
      * <p>The iterator variant is deemed inefficient due to it's use of a {@link PriorityQueue},
      * however other than that the two algorithms are functionally similar.
      */
-    private static final int KNN_ITERATOR_THRESHOLD = 64;
+    private static final int KNN_ITERATOR_THRESHOLD = Integer.MAX_VALUE;
 
     private final @NotNull PointObjectPair<E>[] points;
 
     public SpatialBufferedQueryArray(@NotNull Collection<@NotNull PointObjectPair<E>> points) {
         @SuppressWarnings("unchecked")
-        PointObjectPair<E>[] pointArray = points.toArray(new @NotNull PointObjectPair[0]);
+        @NotNull PointObjectPair<E>[] pointArray = points.toArray(new @NotNull PointObjectPair[0]);
         this.points = pointArray;
         Arrays.sort(this.points);
     }
@@ -81,9 +81,9 @@ public class SpatialBufferedQueryArray<E> implements SpatialRingIndex1NN<E>, Spa
         return leftAnchor;
     }
 
-    public Iterator<E> createIterator(float x, float y) {
+    public Iterator<@NotNull E> createIterator(float x, float y) {
 
-        return new Iterator<E>() {
+        return new Iterator<@NotNull E>() {
 
             /**
              * Elements that already had their distances evaluated (i.e. are between the left
@@ -107,6 +107,7 @@ public class SpatialBufferedQueryArray<E> implements SpatialRingIndex1NN<E>, Spa
             }
 
             @Override
+            @NotNull
             public E next() {
                 CachedObject<E> nearest = this.next0();
                 if (nearest == null) {
@@ -227,7 +228,7 @@ public class SpatialBufferedQueryArray<E> implements SpatialRingIndex1NN<E>, Spa
         neighbourCount = Math.min(neighbourCount, this.points.length);
 
         if (neighbourCount > SpatialBufferedQueryArray.KNN_ITERATOR_THRESHOLD) {
-            Iterator<E> it = this.createIterator(x, y);
+            Iterator<@NotNull E> it = this.createIterator(x, y);
             while (neighbourCount-- != 0) {
                 out.accept(it.next());
             }
